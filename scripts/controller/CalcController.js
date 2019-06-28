@@ -28,9 +28,11 @@ class CalcController{
 
        /* this._dateEL.innerHTML = "18/05/1995";
         this._timeEL.innerHTML = "18:00"; */
+
+        this.setLastNumberToDisplay();
     }
 
-    addEventListenerAll(element, events, fn){//função para rodar cada evento por vez - clique e drag
+    addEventListenerAll(element, events, fn){//função para rodar cada evento por vez - click e drag
         //split separa as duas palavras pelo espaço(ou ponto, virgula) e tranforma em um array
         events.split(',').forEach(event=>{
             element.addEventListener(event, fn,false);//false é pra não contar como duas vezes qdo clicar
@@ -41,14 +43,18 @@ class CalcController{
 
     clearAll(){
         this._operation = [];
+
+        this.setLastNumberToDisplay();
     }
     clearEntry(){
         this._operation.pop();//retira o ultimo valor que tinha sido inserido no array
+
+        this.setLastNumberToDisplay();
     }
 
     getLastOperation(){
-      //  return this._operation[this._operation.length - 1];
-      console.log("-->",this._operation[this._operation.length - 1]);
+        return this._operation[this._operation.length - 1];
+     // console.log("-->",this._operation[this._operation.length - 1]);
       
         //retorna a ultima operação(sendo numero ou operador)
     }
@@ -64,7 +70,59 @@ class CalcController{
         
 
     }
-    addOperation(value){//add o operador no array
+
+    pushOperation(value){//metodo para verificar se é um trio (numero + operador + numero)
+
+        this._operation.push(value);
+
+        if(this._operation.length > 3){
+
+            this.calc(); //função responsavel pelo calculo do n+o+n
+            
+        }
+
+    }
+
+    calc(){
+
+        let last = this._operation.pop();//retira o ultimo elemento do array, deixando (numero + operador + numero)
+        
+        let result = eval(this._operation.join(""));
+
+        if(last == '%'){//o ultimo é o simbolo de porcentagem
+
+            result = result / 1000;
+
+            this._operation = [result];
+
+        }else{
+
+            this._operation = [result, last];//cria um novo array, insere o n+o+n+last
+        }
+   
+
+        this.setLastNumberToDisplay();//metodo para mostrar no display o ultimo numero
+    }
+
+    setLastNumberToDisplay(){
+
+        let lastNumber;
+
+        for(let i = this._operation.length - 1; i >= 0; i--){
+            if(!this.isOperator(this._operation[i])){//se não for um operador, ou seja se for numero
+                lastNumber = this._operation[i];
+                break;
+            }
+        }
+
+        if(!lastNumber) lastNumber = 0;
+
+        this.displayCalc = lastNumber;
+    }
+
+    addOperation(value){//add a operação no array [ONDE ESTA A LOGICA]
+
+        //console.log('A',value,(this.getLastOperation()));
 
         if(isNaN(this.getLastOperation())){//Se o ultimo valor inserido no array não for um numero...
             //se for string
@@ -72,22 +130,32 @@ class CalcController{
             if(this.isOperator(value)){
                 //trocar o operador
                 
-                this._setLastOperation(value);//chama a função que troca o operador anterior pelo ultimo que foi apertado
+                this.setLastOperation(value);//chama a função que troca o operador anterior pelo ultimo que foi apertado
                 
             }else if(isNaN(value)){
-                //outra coisa
-                console.log(value);
+                
+                console.log('outra coisa',value);
             }else{
-                this._operation.push(value);
+                this.pushOperation(value);
+                this.setLastNumberToDisplay();//metodo para mostrar no display o ultimo numero
             }
         }else{
-            //se for numero, tem que concatenar
-           let newValue = this.getLastOperation().toString() + value.toString();
-           this._setLastOperation(parseInt(newValue));//add o operador no array operation
+
+            if(this.isOperator(value)){//meu valor de agora é um operador? +-*/
+
+                this.pushOperation(value);//add no array
+
+            }else{
+                            //se for numero, tem que concatenar
+                let newValue = this.getLastOperation().toString() + value.toString();
+                this._setLastOperation(parseInt(newValue));//add o operador no array operation
+                //atualizar display
+
+                this.setLastNumberToDisplay();//metodo para mostrar no display o ultimo numero
+            }
         }
        
-        //push add no final do array
-        console.log(this._operation);
+        
     }
 
     setError(){
@@ -158,9 +226,9 @@ class CalcController{
             this.execbtn(textBtn);
        });
        
-       this.addEventListenerAll(btn,'mouseover,mouseup,mousedown', e=>{//drag é quando clica e arrasta
+     /*  this.addEventListenerAll(btn,'mouseover,mouseup,mousedown', e=>{//drag é quando clica e arrasta
        btn.style.cursor = "pointer";
-        });
+        }); */
      });
  
     }
