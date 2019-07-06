@@ -2,8 +2,9 @@ class CalcController{
 
     constructor(){
         //quando tem underline na frente do atributo ele é PRIVADO(encapsulamento)
-                
-        this.operation = [];
+        this._lastOperator = '';
+        this._lastNumber = '';
+        this._operation = [];
         this._locale = "pt-BR";        
         this._displayCalcEL = document.querySelector("#display");//criou um vinculo - amarrou o elemento com a variavel
         this._dateEL = document.querySelector("#data");
@@ -63,7 +64,7 @@ class CalcController{
         this._operation[this._operation.length - 1] = value;
     }
 
-    isOperator(){
+    isOperator(value){
        return (['+','-','*','%','/'].indexOf(value) > -1);
         /*procura o value dentro do array
         se encontrar traz o index, senhão -1*/
@@ -83,11 +84,40 @@ class CalcController{
 
     }
 
+    getResult(){
+
+        return eval(this._operation.join(""));
+    }
+
     calc(){
 
-        let last = this._operation.pop();//retira o ultimo elemento do array, deixando (numero + operador + numero)
-        
-        let result = eval(this._operation.join(""));
+        let last = "";
+
+        this._lastOperator = this.getLastItem();//guarda o ultimo operador do array
+
+        if(this._operation.length < 3){
+
+            let firstItem = this._operation[0];
+
+            this._operation = [firstItem, this._lastOperator, this._lastNumber];
+
+        }
+
+        if(this._operation.length > 3){
+            
+
+             last = this._operation.pop();//retira o ultimo elemento do array, deixando (numero + operador + numero)
+            
+             this._lastNumber = this.getResult();//guarda a ultima operaçao pra qdo clicar no botao igual mais de uma vez, ex: [5, "+"]
+       
+        }else if(this._operation.length == 3){
+
+           
+            this._lastNumber = this.getLastItem(false);//busca o ultimo numero do array
+        }
+
+
+        let result = this.getResult();
 
         if(last == '%'){//o ultimo é o simbolo de porcentagem
 
@@ -97,24 +127,43 @@ class CalcController{
 
         }else{
 
-            this._operation = [result, last];//cria um novo array, insere o n+o+n+last
+            this._operation = [result];//cria um novo array, insere o n+o+n+last
+            if(last) this._operation.push(last);
         }
    
 
         this.setLastNumberToDisplay();//metodo para mostrar no display o ultimo numero
     }
 
-    setLastNumberToDisplay(){
+    getLastItem(isOperator = true){
+        // se cahamado o metodo sem passar parametro 
+        //procura onde esta o ultimo operador e guarda em lastItem
+        //se passar com parametro false, tras o ultimo numero
 
-        let lastNumber;
+        let lastItem;
+
+        
 
         for(let i = this._operation.length - 1; i >= 0; i--){
-            if(!this.isOperator(this._operation[i])){//se não for um operador, ou seja se for numero
-                lastNumber = this._operation[i];
-                break;
-            }
+
+                if(this.isOperator(this._operation[i]) == isOperator){
+                    lastItem = this._operation[i];
+                    break;
+                }
+         
+        }
+        if(!lastItem){
+            lastItem = (isOperator) ? this._lastOperator : this._lastNumber;
         }
 
+        return lastItem;
+    }
+
+    setLastNumberToDisplay(){
+
+        let lastNumber = this.getLastItem(false);//passa false pq quer um numero
+
+       
         if(!lastNumber) lastNumber = 0;
 
         this.displayCalc = lastNumber;
@@ -188,7 +237,7 @@ class CalcController{
                 this.addOperation('%');
                 break;
             case 'igual':
-                
+                this.calc();
                 break;
             case 'igual':
                 this.addOperation('.');
